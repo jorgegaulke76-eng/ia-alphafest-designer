@@ -1,4 +1,3 @@
 streamlit
-pdf2image
+huggingface_hub
 pillow
-requests
