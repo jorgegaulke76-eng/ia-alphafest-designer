@@ -1,31 +1,33 @@
 import streamlit as st
 import io
-import traceback
 from huggingface_hub import InferenceClient
 
 st.set_page_config(page_title="IA Designer Alphafest", layout="centered")
 
 st.title("🎨 Designer de IA - Alphafest")
-st.write("Gerador de imagens via IA (Nuvem).")
 
 # Barra lateral
-hf_token = st.sidebar.text_input("Cole seu Token do Hugging Face", type="password")
+hf_token = st.sidebar.text_input("Cole seu Token do Hugging Face (hf_...)", type="password")
+
+# Campo de Upload (Voltou!)
+uploaded_file = st.file_uploader("Enviar PDF ou Imagem de referência", type=["pdf", "png", "jpg"])
 
 # Prompt
 prompt = st.text_area("Descreva a arte que você deseja", "A beautiful sticker design for a party, high quality, vector style, white background")
 
-if st.button("🚀 Gerar Imagem com IA"):
+if st.button("🚀 Gerar com IA"):
     if not hf_token:
         st.warning("Insira seu token do Hugging Face na barra lateral.")
+    elif not hf_token.startswith("hf_"):
+        st.error("Seu token parece inválido. Ele deve começar com 'hf_'.")
     else:
         with st.spinner("Conectando à IA..."):
             try:
-                # Usando um cliente genérico
-                client = InferenceClient(token=hf_token)
+                # Inicializa o cliente forçando o uso do token
+                client = InferenceClient(model="runwayml/stable-diffusion-v1-5", token=hf_token)
                 
-                # Vamos usar um modelo clássico e liberado: 'runwayml/stable-diffusion-v1-5'
-                # Usando text-to-image, que é a função que o plano gratuito aceita
-                image = client.text_to_image(prompt, model="runwayml/stable-diffusion-v1-5")
+                # Gera a imagem
+                image = client.text_to_image(prompt)
                 
                 st.image(image, caption="Resultado Final")
                 
@@ -37,4 +39,4 @@ if st.button("🚀 Gerar Imagem com IA"):
             except Exception as e:
                 st.error("Erro na comunicação com a IA:")
                 st.text(str(e))
-                st.write("Nota: Se aparecer '401', verifique se o seu token tem permissão de leitura.")
+                st.write("Verifique se o token copiado não tem espaços no início ou fim.")
