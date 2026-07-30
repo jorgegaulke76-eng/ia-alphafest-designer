@@ -1,44 +1,40 @@
 import streamlit as st
 import io
 import traceback
-from pdf2image import convert_from_bytes
-from PIL import Image
 from huggingface_hub import InferenceClient
 
 st.set_page_config(page_title="IA Designer Alphafest", layout="centered")
 
 st.title("🎨 Designer de IA - Alphafest")
-st.write("Transforme PDFs em artes A4 com IA.")
+st.write("Gerador de imagens via IA (Nuvem).")
 
+# Barra lateral
 hf_token = st.sidebar.text_input("Cole seu Token do Hugging Face", type="password")
-prompt = st.text_area("Seu Prompt", "Transform the image into a high quality sticker design, vector style, white background")
 
-uploaded_file = st.file_uploader("Enviar PDF", type=["pdf"])
+# Prompt
+prompt = st.text_area("Descreva a arte que você deseja", "A beautiful sticker design for a party, high quality, vector style, white background")
 
-if uploaded_file and prompt and hf_token:
-    if st.button("🚀 Gerar com IA"):
-        with st.spinner("Processando na nuvem..."):
+if st.button("🚀 Gerar Imagem com IA"):
+    if not hf_token:
+        st.warning("Insira seu token do Hugging Face na barra lateral.")
+    else:
+        with st.spinner("Conectando à IA..."):
             try:
-                # 1. Converter PDF
-                images = convert_from_bytes(uploaded_file.getvalue())
-                img_original = images[0]
+                # Usando um cliente genérico
+                client = InferenceClient(token=hf_token)
                 
-                # 2. Conectar usando o modelo estável (stabilityai/stable-diffusion-2-1)
-                client = InferenceClient(model="stabilityai/stable-diffusion-2-1", token=hf_token)
+                # Vamos usar um modelo clássico e liberado: 'runwayml/stable-diffusion-v1-5'
+                # Usando text-to-image, que é a função que o plano gratuito aceita
+                image = client.text_to_image(prompt, model="runwayml/stable-diffusion-v1-5")
                 
-                # 3. Gerar
-                # Nota: O image_to_image pode falhar se o modelo não suportar a tarefa.
-                # Se falhar, estamos usando o tratamento de erro abaixo.
-                image_result = client.image_to_image(image=img_original, prompt=prompt)
+                st.image(image, caption="Resultado Final")
                 
-                # 4. Exibir
-                st.image(image_result, caption="Resultado Final")
+                # Botão de Download
+                buf = io.BytesIO()
+                image.save(buf, format="PNG")
+                st.download_button("📥 Baixar PNG", buf.getvalue(), "arte_alphafest.png", "image/png")
                 
             except Exception as e:
-                st.error("Ops! Tivemos um problema com este modelo.")
-                st.text("Detalhes do erro:")
+                st.error("Erro na comunicação com a IA:")
                 st.text(str(e))
-                st.write("Dica: Alguns modelos da IA são muito pesados para o plano gratuito. Se o erro persistir, o servidor da IA pode estar ocupado.")
-
-elif not hf_token:
-    st.warning("Insira seu token do Hugging Face na barra lateral.")
+                st.write("Nota: Se aparecer '401', verifique se o seu token tem permissão de leitura.")
