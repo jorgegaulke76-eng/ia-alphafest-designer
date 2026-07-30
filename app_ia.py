@@ -7,8 +7,13 @@ st.set_page_config(page_title="IA Designer Alphafest", layout="centered")
 
 st.title("🎨 Designer de IA - Alphafest")
 
-# Configuração
-hf_token = st.sidebar.text_input("Cole seu Token do Hugging Face (Começa com hf_)", type="password")
+# Barra lateral
+hf_token = st.sidebar.text_input("Cole seu Token do Hugging Face", type="password")
+
+# Campo de Upload (VOLTOU!)
+uploaded_file = st.file_uploader("Enviar PDF ou Imagem de referência", type=["pdf", "png", "jpg"])
+
+# Prompt
 prompt = st.text_area("Descreva a arte", "A beautiful sticker design for a party, vector style, white background")
 
 if st.button("🚀 Gerar com IA"):
@@ -18,10 +23,13 @@ if st.button("🚀 Gerar com IA"):
         with st.spinner("Conectando à IA..."):
             try:
                 # Inicializa o cliente
-                client = InferenceClient(model="runwayml/stable-diffusion-v1-5", token=hf_token)
+                client = InferenceClient(token=hf_token)
                 
-                # Teste simples de geração
-                image = client.text_to_image(prompt)
+                # Gerar imagem forçando o modelo dentro da função (isso evita o erro StopIteration)
+                image = client.text_to_image(
+                    prompt, 
+                    model="runwayml/stable-diffusion-v1-5"
+                )
                 
                 st.image(image, caption="Resultado Final")
                 
@@ -31,8 +39,7 @@ if st.button("🚀 Gerar com IA"):
                 st.download_button("📥 Baixar PNG", buf.getvalue(), "arte.png", "image/png")
                 
             except Exception as e:
-                # ISSO VAI MOSTRAR O ERRO REAL NA TELA
                 st.error("Erro na comunicação com a IA:")
+                st.text("Detalhes do erro:")
                 st.text(str(e))
-                st.subheader("Detalhes Técnicos (O que está travando):")
-                st.code(traceback.format_exc())
+                st.write("Dica: Se o erro persistir, o servidor gratuito da Hugging Face pode estar temporariamente ocupado.")
