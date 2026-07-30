@@ -23,20 +23,22 @@ if uploaded_file and prompt and hf_token:
                 images = convert_from_bytes(uploaded_file.getvalue())
                 img_original = images[0]
                 
-                # 2. Conectar e Gerar
-                client = InferenceClient(model="runwayml/stable-diffusion-v1-5", token=hf_token)
+                # 2. Conectar usando o modelo estável (stabilityai/stable-diffusion-2-1)
+                client = InferenceClient(model="stabilityai/stable-diffusion-2-1", token=hf_token)
                 
-                # Vamos tentar a geração
+                # 3. Gerar
+                # Nota: O image_to_image pode falhar se o modelo não suportar a tarefa.
+                # Se falhar, estamos usando o tratamento de erro abaixo.
                 image_result = client.image_to_image(image=img_original, prompt=prompt)
                 
-                # 3. Ajustar e Exibir
+                # 4. Exibir
                 st.image(image_result, caption="Resultado Final")
                 
             except Exception as e:
-                st.error("Ops! Ocorreu um erro técnico:")
-                st.text(str(e))
+                st.error("Ops! Tivemos um problema com este modelo.")
                 st.text("Detalhes do erro:")
-                st.text(traceback.format_exc())
+                st.text(str(e))
+                st.write("Dica: Alguns modelos da IA são muito pesados para o plano gratuito. Se o erro persistir, o servidor da IA pode estar ocupado.")
 
 elif not hf_token:
     st.warning("Insira seu token do Hugging Face na barra lateral.")
